@@ -28,6 +28,7 @@ app.layout = dbc.Container(
                         ],
                         style={'textAlign': 'center'},
                     ),
+                    html.Br()
                 ],
                 width=12,
             ),
@@ -36,23 +37,25 @@ app.layout = dbc.Container(
             [
                 dbc.Col(
                     [
-                        html.H2(
-                            [
-                                "Map Dataset:"
-                            ]
+                        html.H3(
+                            "Map Dataset:",
+                            style={
+                                "textAlign": "right",
+                                "color": "gray"
+                                   }
                         )
                     ],
-                    width=6,
+                    width=4,
                 ),
                 dbc.Col(
                     [
                         dcc.Dropdown(
                             id="dataset-dropdown",
                             options=[
-                                {"label": "Global GDP", "value": "GDP"},
-                                {"label": "Global Municipal Waste", "value": "Waste"},
+                                {"label": "Global GDP", "value": "GDP per capita"},
+                                {"label": "Global Municipal Waste", "value": "Waste per capita"},
                             ],
-                            value="GDP"
+                            value="GDP per capita"
                         )
                     ],
                     width=6,
@@ -64,7 +67,7 @@ app.layout = dbc.Container(
                 [
                     html.H2(
                         [
-                            "Global GDP in 1975",
+                            "Global GDP per capita in 1975",
                         ],
                         id="choropleth-title",
                         style={'textAlign': 'center'},
@@ -107,7 +110,7 @@ app.layout = dbc.Container(
                 [
                     html.H2(
                         [
-                            "GDP Versus Municipal Waste in USA"
+                            "GDP Versus Municipal Waste per capita in USA"
                         ],
                         id="comparison-title",
                         style={'textAlign': 'center'},
@@ -117,7 +120,8 @@ app.layout = dbc.Container(
             ),
         ),
     ],
-    className="row"
+    className="row",
+    fluid=True
 )
 
 
@@ -138,12 +142,14 @@ def update_gdp_title(year, dataset):
     Input("dataset-dropdown", "value")
 )
 def update_gdp_graph(year, dataset):
-    if dataset == "GDP":
+    if dataset == "GDP per capita":
         df = gdp_df
-        label = "GDP"
+        label = "GDP per capita"
+        color = "Blues"
     else:
         df = waste_df
-        label = "kg of waste per person"
+        label = "kg of waste per capita"
+        color = "Reds"
     dff = df[df["TIME_PERIOD"] == year]
     fig = px.choropleth(
         data_frame=dff,
@@ -151,7 +157,8 @@ def update_gdp_graph(year, dataset):
         color="OBS_VALUE",
         scope="world",
         hover_data={"REF_AREA": False, "Reference area": True},
-        hover_name="Reference area"
+        hover_name="Reference area",
+        color_continuous_scale = color,
     )
     fig.update_layout(
         coloraxis_colorbar_title=label,
@@ -167,7 +174,7 @@ def update_gdp_graph(year, dataset):
 )
 def update_gdp_title(selected_area):
     if selected_area is None:
-        return "GDP Versus Municipal Waste in United States of America"
+        return "GDP Versus Municipal Waste per capita in United States of America"
     country = selected_area["points"][0]["hovertext"]
     return "GDP Versus Municipal Waste in " + str(country)
 
@@ -191,16 +198,16 @@ def update_comparison(selected_area, year):
         go.Line(
             x=combined_df["TIME_PERIOD"],
             y=combined_df["OBS_VALUE_x"],
-            name="GDP per capita (Dollars)",
             yaxis="y1",
+            showlegend=False
         )
     )
     fig.add_trace(
         go.Line(
             x=combined_df["TIME_PERIOD"],
             y=combined_df["OBS_VALUE_y"],
-            name="Waste per capita (kg)",
             yaxis="y2",
+            showlegend=False
         )
     )
     fig.update_layout(
@@ -226,6 +233,7 @@ def update_comparison(selected_area, year):
             title_font=dict(size=16, color="blue"),
             tickfont=dict(size=12, color="darkblue"),
             side="left",
+            range=[0, None],
         ),
         yaxis2=dict(
             title="Waste per capita (kg)",
@@ -233,6 +241,7 @@ def update_comparison(selected_area, year):
             tickfont=dict(size=12, color="darkred"),
             overlaying="y",
             side="right",
+            range=[0, None],
         ),
     )
     return fig
